@@ -2,6 +2,8 @@
 Megasearch for Oobabooga TextUI is an extension that allows a user to search multiple search engines and include the output in the context.
 Initially we're using Google API or DuckDuckGo. 
 
+As this is an Open Source project your PRs are very much welcome!
+
 ## Installation
 1. To install the plugin, copy the megasearch folder to the extensions folder.
 2. Open script.py and fill in your Google API Key as well as the CSE_ID.
