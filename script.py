@@ -43,7 +43,7 @@ def ui():
     components = [
         gr.inputs.Checkbox(label='SEARCH_ACCESS', default=True),  # A checkbox to control search access. The default value is True.
         gr.inputs.Radio(['Google', 'DuckDuckGo', 'Searx'], label='SEARCH_ENGINE', default='Searx'),  # A radio button to select the search engine. The default value is 'Google'.
-        gr.inputs.Textbox(label='SEARX_SERVER')  # A textbox for the search query that will be submitted to Google.
+        gr.inputs.Textbox(label='SEARX_SERVER'),  # A textbox for the search query that will be submitted to Google.
         gr.inputs.Textbox(label='API_KEY'),  # A textbox for the Google API key.
         gr.inputs.Textbox(label='CSE_ID'),  # A textbox for the Google Custom Search Engine (CSE) ID.
         gr.inputs.Textbox(label='QUERY')  # A textbox for the search query that will be submitted to Google.
