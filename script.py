@@ -1,59 +1,61 @@
 import gradio as gr
 import requests
 import json
+from bs4 import BeautifulSoup
+from summarizer import Summarizer
 
-SEARCH_ACCESS = False
-SEARCH_ENGINE = None
-API_KEY = ''
-CSE_ID = ''
-
+# Define the interface components
 def ui():
-    global SEARCH_ACCESS, SEARCH_ENGINE, API_KEY1, API_KEY2
-    SEARCH_ACCESS = gr.inputs.Checkbox(label="Enable Search", default=False)
-    SEARCH_ENGINE = gr.inputs.Radio(['Google', 'DuckDuckGo'], label="Choose Search Engine")
-    API_KEY = gr.inputs.Textbox(lines=1, placeholder="Enter Google API Key if Google is selected")
-    CSE_ID = gr.inputs.Textbox(lines=1, placeholder="Enter Google CSE ID if Google is selected")
-    return [SEARCH_ACCESS, SEARCH_ENGINE, API_KEY1, API_KEY2]
+    components = [
+        gr.inputs.Checkbox(label='SEARCH_ACCESS', default=True),
+        gr.inputs.Radio(['Google', 'DuckDuckGo'], label='SEARCH_ENGINE', default='Google'),
+        gr.inputs.Textbox(label='API_KEY'),
+        gr.inputs.Textbox(label='CSE_ID'),
+        gr.inputs.Textbox(label='QUERY')
+    ]
+    return components
 
-def input_modifier(user_input):
-    global SEARCH_ACCESS, SEARCH_ENGINE, API_KEY1, API_KEY2
-    result_max_characters = 250
-    max_results = 3
-    if SEARCH_ACCESS:
-        if user_input.lower().startswith("search:"):
-            query = user_input[len("search:"):].strip()
-            if SEARCH_ENGINE == 'Google':
-                url = f"https://www.googleapis.com/customsearch/v1?key={API_KEY}&cx={CSE_ID}&q={query}"
-                response = requests.get(url)
-                data = json.loads(response.text)
-                texts = ''
-                count = 0
-                for result in data['items']:
-                    if count <= max_results:
-                        text = result['snippet']
-                        texts = texts + ' ' + text
+# Define the params dictionary
+params = {
+    'SEARCH_ACCESS': True,
+    'SEARCH_ENGINE': 'Google',
+    'API_KEY': '',
+    'CSE_ID': '',
+    'QUERY': 'Panomity GmbH'
+}
+
+def input_modifier(string):
+    # Check if the search engine is Google
+    if params["SEARCH_ENGINE"] == 'Google':
+        url = f"https://www.googleapis.com/customsearch/v1?key={params['API_KEY']}&cx={params['CSE_ID']}&q={params['QUERY']}"
+        response = requests.get(url)
+        data = json.loads(response.text)
+        texts = ''
+        count = 0
+        max_results = 3
+        result_max_characters = 250
+        if 'items' in data:
+            for result in data['items']:
+
+                if count <= max_results:
+                    link = result['link']
+                    page_content = requests.get(link).text
+                    soup = BeautifulSoup(page_content, 'html.parser')
+                    paragraphs = soup.find_all('p')
+                    content = ' '.join([p.get_text() for p in paragraphs])
+                    if len(content) > 0:  # ensure content is not empty
+                        model = Summarizer()
+                        summary = model(content, num_sentences=3)  # Adjusted line
+                        texts = texts + ' ' + summary
                         count += 1
-                texts = texts[0:result_max_characters]
-                print(texts)
-                return texts
-            elif SEARCH_ENGINE == 'DuckDuckGo':
-                url = f"https://api.duckduckgo.com/?q={query}&format=json"
-                response = requests.get(url)
-                data = json.loads(response.text)
-                texts = ''
-                count = 0
-                for result in data['Results']:
-                    if count <= max_results:
-                        text = result['Text']
-                        texts = texts + ' ' + text
-                        count += 1
-                texts = texts[0:result_max_characters]
-                print(texts)
-                return texts
-    return user_input
+            string += texts[:result_max_characters]
+    return string
 
-def output_modifier(output):
-    return output
+# Define the event handler for parameter updates
+def update_params(inputs):
+    global params
+    for input_name, input_value in inputs.items():
+        params[input_name] = input_value
 
-def bot_prefix_modifier(prefix):
-    return prefix
+# Create the Gradio interface and bind the event handler
+iface = gr.Interface(inputs=ui(), outputs="text", fn=input_modifier, update_fn=update_params)
