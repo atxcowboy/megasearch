@@ -1,0 +1,4 @@
+beautifulsoup4
+bert-extractive-summarizer
+spacy==3.0.6
+en_core_web_sm==3.0.0
